@@ -1,7 +1,9 @@
 package com.example.mp3_project_jhy;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.provider.MediaStore;
@@ -19,10 +21,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
-public class Player extends Fragment implements View.OnClickListener{
+public class Player extends Fragment implements View.OnClickListener {
 
     private ImageView ivAlbum;
     private TextView tvPlayCount, tvArtist, tvTitle, tvCurrentTime, tvDuration;
@@ -42,7 +45,7 @@ public class Player extends Fragment implements View.OnClickListener{
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
-        mainActivity = (MainActivity)getActivity();
+        mainActivity = (MainActivity) getActivity();
     }
 
     //Fragment 가 제거되고, Activity로부터 해제될 때 호출됩니다.
@@ -65,11 +68,11 @@ public class Player extends Fragment implements View.OnClickListener{
         musicAdapter = mainActivity.getMusicAdapter_like();
         //좋아요 리스트 가져오기
         likeArrayList = mainActivity.getMusicLikeArrayList();
-        
+
         musicAdapter.setMusicList(likeArrayList);
-        
+
         seekBarChangeMethod();
-        
+
 
         return view;
     }
@@ -80,7 +83,7 @@ public class Player extends Fragment implements View.OnClickListener{
             @Override
             public void onProgressChanged(SeekBar seekBar, int position, boolean b) {
                 //사용자가 움직였을 시, seekbar 이동
-                if(b){
+                if (b) {
                     mediaPlayer.seekTo(position);
                 }
             }
@@ -98,13 +101,13 @@ public class Player extends Fragment implements View.OnClickListener{
     }
 
     //시크바 스레드에 관한 함수
-    private void setSeekBarThread(){
+    private void setSeekBarThread() {
         Thread thread = new Thread(new Runnable() {
             SimpleDateFormat sdf = new SimpleDateFormat("mm:ss");
 
             @Override
             public void run() {
-                while(mediaPlayer.isPlaying()){
+                while (mediaPlayer.isPlaying()) {
                     seekBar.setProgress(mediaPlayer.getCurrentPosition());
                     mainActivity.runOnUiThread(new Runnable() {
                         @Override
@@ -144,55 +147,55 @@ public class Player extends Fragment implements View.OnClickListener{
     @Override
     public void onClick(View view) {
 
-        switch (view.getId()){
-            case R.id.ibPlay :
-                if(ibPlay.isActivated()){
+        switch (view.getId()) {
+            case R.id.ibPlay:
+                if (ibPlay.isActivated()) {
                     mediaPlayer.pause();
                     ibPlay.setActivated(false);
-                }else{
+                } else {
                     mediaPlayer.start();
 
                     setSeekBarThread();
                 }
                 break;
-            case R.id.ibPrevious :
+            case R.id.ibPrevious:
                 mediaPlayer.stop();
                 mediaPlayer.reset();
                 try {
-                    if(index == 0){
+                    if (index == 0) {
                         index = mainActivity.getMusicDataArrayList().size();
                     }
                     index--;
                     setPlayerData(index, true);
 
                 } catch (Exception e) {
-                    Log.d("ubPrevious",e.getMessage());
+                    Log.d("ubPrevious", e.getMessage());
                 }
                 break;
-            case R.id.ibNext :
+            case R.id.ibNext:
                 try {
                     mediaPlayer.stop();
                     mediaPlayer.reset();
-                    if(index == mainActivity.getMusicDataArrayList().size()-1){
-                        index= -1;
+                    if (index == mainActivity.getMusicDataArrayList().size() - 1) {
+                        index = -1;
                     }
                     index++;
                     setPlayerData(index, true);
 
                 } catch (Exception e) {
-                    Log.d("ibNext",e.getMessage());
+                    Log.d("ibNext", e.getMessage());
                 }
                 break;
-            case R.id.ibLike :
+            case R.id.ibLike:
 
-                if(ibLike.isActivated()){
+                if (ibLike.isActivated()) {
                     ibLike.setActivated(false);
                     musicData.setLiked(0);
                     likeArrayList.remove(musicData);
                     musicAdapter.notifyDataSetChanged();
                     Toast.makeText(mainActivity, "좋아요 취소", Toast.LENGTH_SHORT).show();
 
-                }else{
+                } else {
                     ibLike.setActivated(true);
                     musicData.setLiked(1);
                     likeArrayList.add(musicData);
@@ -201,10 +204,70 @@ public class Player extends Fragment implements View.OnClickListener{
                 }
 
                 break;
-            default:break;
+            default:
+                break;
         }
     }
 
     public void setPlayerData(int pos, boolean b) {
+        index = pos;
+
+        mediaPlayer.stop();
+        mediaPlayer.reset();
+
+        MusicAdapter musicAdapter = new MusicAdapter(mainActivity);
+
+        if (b) {
+            musicData = mainActivity.getMusicDataArrayList().get(pos);
+
+        } else {
+            musicData = mainActivity.getMusicLikeArrayList().get(pos);
+        }
+
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("mm:ss");
+
+        tvTitle.setText(musicData.getTitle());
+        tvArtist.setText(musicData.getArtist());
+        tvPlayCount.setText(String.valueOf(musicData.getPlayCount()));
+        tvDuration.setText(simpleDateFormat.format(Integer.parseInt(musicData.getDuration())));
+
+        if (musicData.getLiked() == 1) {
+            ibLike.setActivated(true);
+        } else {
+            ibLike.setActivated(false);
+        }
+
+        // 앨범 이미지 세팅
+        Bitmap albumImg = musicAdapter.getAlbumImg(mainActivity, Long.parseLong(musicData.getAlbumArt()), 200);
+        if (albumImg != null) {
+            ivAlbum.setImageBitmap(albumImg);
+        } else {
+            ivAlbum.setImageResource(R.drawable.apple);
+        }
+
+        // 음악 재생
+        Uri musicURI = Uri.withAppendedPath(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, musicData.getId());
+        try {
+            mediaPlayer.setDataSource(mainActivity, musicURI);
+            mediaPlayer.prepare();
+            mediaPlayer.start();
+            seekBar.setProgress(0);
+            seekBar.setMax(Integer.parseInt(musicData.getDuration()));
+            ibPlay.setActivated(true);
+
+            setSeekBarThread();
+
+            // 재생완료 리스너
+            mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(MediaPlayer mediaPlayer) {
+                    musicData.setPlayCount(musicData.getPlayCount() + 1);
+                    ibNext.callOnClick();
+                }
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 }

@@ -30,12 +30,14 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.CustomViewHo
     private OnItemClickListener mListener = null;
 
     //생성자 만들기
-    public MusicAdapter(Context applicationContext){}
-
-    public MusicAdapter(Context context, ArrayList<MusicData> musicList) {
-        this.context = context;
-        this.musicList = musicList;
+    public MusicAdapter(Context applicationContext){
+        this.context = applicationContext;
     }
+
+//    public MusicAdapter(Context context, ArrayList<MusicData> musicList) {
+//        this.context = context;
+//        this.musicList = musicList;
+//    }
 
 
     @NonNull
@@ -67,8 +69,13 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.CustomViewHo
         customViewHolder.duration.setText(sdf.format(Integer.parseInt(musicList.get(position).getDuration())));
     }
 
+    @Override
+    public int getItemCount() {
+        return (musicList != null) ? musicList.size() : 0;
+    }
+
     //앨범아트를 가져오는 함수
-    private Bitmap getAlbumImg(Context context, long albumArt, int imgMaxSize) {
+    public Bitmap getAlbumImg(Context context, long albumArt, int imgMaxSize) {
         BitmapFactory.Options options = new BitmapFactory.Options();
         ContentResolver contentResolver = context.getContentResolver();
 
@@ -117,11 +124,16 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.CustomViewHo
     }
 
 
-    @Override
-    public int getItemCount() {
-        return (musicList != null) ? musicList.size() : 0;
+    //1. 내부 인터페이스를 정의한다.
+    public interface OnItemClickListener {
+        //추상화 메소드를 구현한다.
+        void onItemClick(View view, int position);
     }
 
+    //3. 내부 인터페이스 멤버변수에 대한 setters를 만든다.
+    public void setOnItemClickListener(OnItemClickListener listener){
+        this.mListener = listener;
+    }
 
     public class CustomViewHolder extends RecyclerView.ViewHolder {
         //1. 내부 클래스 뷰홀더를 만든다.
@@ -129,6 +141,8 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.CustomViewHo
         //다시 올렸을 때 그 때 객체들이 대체 되는 형식
         private ImageView albumArt;
         private TextView title, artist, duration;
+
+
 
         //화면을 위로 올려 없어진 view 가 itemView에 온다.
         public CustomViewHolder(@NonNull View itemView) {
@@ -153,16 +167,7 @@ public class MusicAdapter extends RecyclerView.Adapter<MusicAdapter.CustomViewHo
         }
     }
 
-    //1. 내부 인터페이스를 정의한다.
-    public interface OnItemClickListener {
-        //추상화 메소드를 구현한다.
-        void onItemClick(View view, int position);
-    }
 
-    //3. 내부 인터페이스 멤버변수에 대한 setters를 만든다.
-    public void setOnItemClickListener(OnItemClickListener listener){
-        this.mListener = listener;
-    }
 
     public void setMusicList(ArrayList<MusicData> musicList) {
         this.musicList = musicList;

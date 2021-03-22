@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.Manifest;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -26,10 +27,10 @@ public class MainActivity extends AppCompatActivity implements MusicAdapter.OnIt
     private FrameLayout frameLayout;
     private RecyclerView recyclerView, recyclerLike;
 
-    private LinearLayoutManager linearLayoutManager;
-    private LinearLayoutManager linearLayoutManager_like;
-    private MusicAdapter musicAdapter;
-    private MusicAdapter musicAdapter_like;
+    private LinearLayoutManager linearLayoutManager, linearLayoutManager_like;
+    
+    private MusicAdapter musicAdapter, musicAdapter_like;
+   
 
     private MusicDBHelper musicDBHelper;
     private ArrayList<MusicData> musicDataArrayList = new ArrayList<>();
@@ -70,6 +71,8 @@ public class MainActivity extends AppCompatActivity implements MusicAdapter.OnIt
 
         // 음악 리스트 가져오기
         musicDataArrayList = musicDBHelper.compareArrayList();
+        //db에서 가져온다
+        Log.d("MainActivity",  "********************"+musicDataArrayList.size() + "***********");
 
         // 음악 DB 저장
         insertDB(musicDataArrayList);
@@ -83,25 +86,28 @@ public class MainActivity extends AppCompatActivity implements MusicAdapter.OnIt
 
         // recyclerview 클릭 이벤트
         musicAdapter.setOnItemClickListener(new MusicAdapter.OnItemClickListener() {
-            @RequiresApi(api = Build.VERSION_CODES.N)
             @Override
-            public void onItemClick(View v, int pos) {
-                // 플레이어 화면 처리
-                ((Player)player).setPlayerData(pos,true);
+            public void onItemClick(View view, int position) {
+                //플레이어 화면 처리
+                ((Player)player).setPlayerData(position, true);
                 drawerLayout.closeDrawer(Gravity.LEFT);
             }
+
         });
 
+
+
         // like_recyclerview 클릭 이벤트
+
         musicAdapter_like.setOnItemClickListener(new MusicAdapter.OnItemClickListener() {
-            @RequiresApi(api = Build.VERSION_CODES.N)
             @Override
-            public void onItemClick(View v, int pos) {
-                // 플레이어 화면 처리
-                ((Player)player).setPlayerData(pos,false);
+            public void onItemClick(View view, int position) {
+                //플레이어 화면 처리
+                ((Player)player).setPlayerData(position, false);
                 drawerLayout.closeDrawer(Gravity.RIGHT);
             }
         });
+
 
         // 프레임 레이아웃 스와이프 -> DrawerLayout 열기
         frameLayout.setOnTouchListener(new View.OnTouchListener() {
@@ -164,8 +170,10 @@ public class MainActivity extends AppCompatActivity implements MusicAdapter.OnIt
 
         if(returnValue){
             Toast.makeText(getApplicationContext(), "삽입 성공", Toast.LENGTH_SHORT).show();
+            Log.d("MainActivity",  "********************insertDB 삽입성공***********");
         }else{
             Toast.makeText(getApplicationContext(), "삽입 실패", Toast.LENGTH_SHORT).show();
+            Log.d("MainActivity",  "********************insertDB 삽입실패 에러***********");
         }
 
     }
@@ -218,7 +226,7 @@ public class MainActivity extends AppCompatActivity implements MusicAdapter.OnIt
     }
 
     @Override
-    public void onItemClick(View v, int pos) {}
+    public void onItemClick(View view, int posisition) {}
 
     public ArrayList<MusicData> getMusicDataArrayList() {
         return musicDataArrayList;
